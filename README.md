@@ -6,6 +6,13 @@ This project contains a group of Python examples focusing on the following aspec
 - UDP demo clients and servers
 - TCP demo client and servers
 
+Main sections of this project and playground are:
+
+- [JSON Introduction](#json-introduction)
+- [UDP Client & Server](#udp-client--server)
+- [TCP Client & Server](#tcp-client--server)
+- [Json TCP Client & Server](#json-tcp-client--server)
+
 ## Json Introduction
 
 JSON (JavaScript Object Notation) is a lightweight data-interchange format that is easy for humans to read and write, and easy for machines to parse and generate. 
