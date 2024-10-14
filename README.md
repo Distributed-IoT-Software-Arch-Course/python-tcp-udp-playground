@@ -268,6 +268,193 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
 You have successfully set up and run a simple TCP client-server application using Python.
 
+## UDP & TCP to call IoT Service
+
+We can extend the previous examples to create a simple IoT service that can be called using UDP or TCP protocols.
+In the following sub-sections you find the main changes of both client and server scripts to call the IoT service.
+The main differences is that the client send a "structured" messages like: 
+
+```text
+request=create_device;device_id=1;device_description=TestDevice
+```
+
+The server will parse the message and return a response like:
+
+```text
+response=OK;msg=device_created
+```
+
+**Note:** This messages have to be parsed and validated in the server and client side. They are not the best 
+way to send data and invoke services, we will learn how to use JSON messages in the next section and in next lectures
+how to use better IoT protocols for interactions with both IoT devices and services.
+
+### UDP IoT Service
+
+The updated server is:
+
+```python
+import socket
+
+localIP = "127.0.0.1"
+localPort = 20001
+bufferSize = 1024
+msgFromServer = "response=OK;msg=device_created"
+bytesToSend = str.encode(msgFromServer)
+
+# Create a datagram socket
+UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+# Bind to address and ip
+UDPServerSocket.bind((localIP, localPort))
+
+print("UDP server up and listening")
+
+# Listen for incoming datagrams
+while (True):
+    bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
+    message = bytesAddressPair[0]
+    address = bytesAddressPair[1]
+
+    clientMsg = "Message from Client:{}".format(message)
+    clientIP = "Client IP Address:{}".format(address)
+
+    str_message = message.decode("utf-8")
+    request_array = str_message.split(";")
+
+    for element in request_array:
+
+        element_array = element.split("=")
+        key = element_array[0]
+        value = element_array[1]
+
+        print(f'Received Key: {key} Value: {value}')
+
+    print(clientMsg)
+    print(clientIP)
+
+    # Sending a reply to client
+    UDPServerSocket.sendto(bytesToSend, address)
+```
+
+The updated client is:
+
+```python
+import socket
+
+msgFromClient = "request=create_device;device_id=1;device_description=TestDevice"
+bytesToSend = str.encode(msgFromClient)
+serverAddressPort = ("127.0.0.1", 20001)
+bufferSize = 1024
+
+# Create a UDP socket at client side
+UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+# Send to server using created UDP socket
+UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+msgFromServer = UDPClientSocket.recvfrom(bufferSize)
+
+msg = "Message from Server {}".format(msgFromServer[0])
+
+str_message = msgFromServer[0].decode("utf-8")
+request_array = str_message.split(";")
+
+for element in request_array:
+
+    element_array = element.split("=")
+    key = element_array[0]
+    value = element_array[1]
+
+    print(f'Received Key: {key} Value: {value}')
+```
+
+### TCP IoT Service
+
+The updated server is:
+
+```python
+import socket
+
+HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
+
+# Create a TCP/IP socket associated with the address family IPv4 and the socket type SOCK_STREAM
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+
+    # Bind the socket to the address and port
+    s.bind((HOST, PORT))
+
+    # Enable the server to accept connections
+    s.listen()
+
+    # Print a message to indicate that the server is waiting for incoming client connections
+    print("Waiting for incoming client connections ...")
+
+    # Accept a connection from a client
+    conn, addr = s.accept()
+
+    # With the connection established communicate with the client
+    with conn:
+        print('Connected by', addr)
+        while True:
+            # Receive data from the client using a buffer of 1024 bytes
+            data = conn.recv(1024)
+            print("Received Message: {}".format(data))
+
+            # If no data is received, break the loop
+            if not data:
+                break
+
+            str_message = data.decode("utf-8")
+            request_array = str_message.split(";")
+
+            for element in request_array:
+                element_array = element.split("=")
+                key = element_array[0]
+                value = element_array[1]
+
+                print(f'Received Key: {key} Value: {value}')
+
+            # Send the received data back to the client (acting as an echo server)
+            conn.sendall(b"response=OK;msg=device_created")
+```
+
+The updated client is:
+
+```python
+import socket
+
+HOST = '127.0.0.1'  # The server's hostname or IP address
+PORT = 65432        # The port used by the server
+
+# Create a TCP/IP socket associated with the address family IPv4 and the socket type SOCK_STREAM
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+
+    # Connect to the server using the specified address and port
+    s.connect((HOST, PORT))
+
+    # Send a message to the server a buffer of 1024 bytes starting with the string "Hello, world"
+    s.sendall(b'request=create_device;device_id=1;device_description=TestDevice')
+
+    # Receive data from the server using a buffer of 1024 bytes
+    data = s.recv(1024)
+
+    # Close the connection
+    s.close()
+
+    # Print the received data
+    print('Received', repr(data))
+
+    str_message = data.decode("utf-8")
+    request_array = str_message.split(";")
+
+    for element in request_array:
+        element_array = element.split("=")
+        key = element_array[0]
+        value = element_array[1]
+
+        print(f'Received Key: {key} Value: {value}')
+```
+
 ## Json TCP Client & Server
 
 In this example we will create a simple TCP client and server that communicate using JSON messages.

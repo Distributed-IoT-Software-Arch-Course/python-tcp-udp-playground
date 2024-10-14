@@ -25,7 +25,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Receive data from the client using a buffer of 1024 bytes
             data = conn.recv(1024)
             print("Received Message: {}".format(data))
+
+            # If no data is received, break the loop
             if not data:
                 break
+
+            str_message = data.decode("utf-8")
+            request_array = str_message.split(";")
+
+            for element in request_array:
+                element_array = element.split("=")
+                key = element_array[0]
+                value = element_array[1]
+
+                print(f'Received Key: {key} Value: {value}')
+
             # Send the received data back to the client (acting as an echo server)
-            conn.sendall(data)
+            conn.sendall(b"response=OK;msg=device_created")
